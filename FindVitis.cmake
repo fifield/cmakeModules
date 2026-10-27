@@ -115,11 +115,11 @@ else(NOT VITIS_VPP)
 	set(vppVersionPatch ${CMAKE_MATCH_4})
 	message(STATUS "v++ version number: ${vppVersionNumber}")
 	if(NOT vppVersionNumber)
-		message(FATAL_ERROR "Vitis version not found")
-		return()
-	endif()
-
-	if(NOT DEFINED Vitis_FIND_VERSION)
+		# Standalone aietools trees (e.g. RyzenAI daily builds) ship a v++ that
+		# prints no version ("v++_aie_essentials v (64-bit)"). Use the
+		# aiecompiler version found by FindAIETools below instead.
+		message(STATUS "v++ did not report a version, using the aiecompiler version")
+	elseif(NOT DEFINED Vitis_FIND_VERSION)
 		set(Vitis_VERSION_MAJOR ${vppVersionMajor})
 		set(Vitis_VERSION_MINOR ${vppVersionMinor})
 	else()
@@ -135,8 +135,12 @@ else(NOT VITIS_VPP)
 endif(NOT VITIS_VPP)
 
 # Find AIE tools
-if(VITIS_VPP)
+if(VITIS_VPP AND vppVersionNumber)
 	find_package(AIETools ${Vitis_VERSION_MAJOR}.${Vitis_VERSION_MINOR} COMPONENTS ${Vitis_FIND_COMPONENTS})
+elseif(VITIS_VPP)
+	find_package(AIETools ${Vitis_FIND_VERSION} COMPONENTS ${Vitis_FIND_COMPONENTS})
+	set(Vitis_VERSION_MAJOR ${AIETools_VERSION_MAJOR})
+	set(Vitis_VERSION_MINOR ${AIETools_VERSION_MINOR})
 else()
 	find_package(AIETools COMPONENTS ${Vitis_FIND_COMPONENTS})
 endif(VITIS_VPP)
